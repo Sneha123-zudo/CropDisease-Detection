@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Crop Doctor AI</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 40px 20px;
+      background: linear-gradient(to right, #e0f7ec, #f0fff4);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      animation: fadeIn 1s ease-in;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .container {
+      max-width: 720px;
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      color: #2d6a4f;
+      margin-bottom: 30px;
+    }
+
+    form {
+      background: white;
+      padding: 25px;
+      padding-right: 50px;
+      border-radius: 16px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      transition: transform 0.3s ease;
+    }
+
+    form:hover {
+      transform: scale(1.01);
+    }
+
+    input[type="file"],
+    input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 15px;
+      border: 1px solid #ccc;
+      border-radius: 10px;
+      font-size: 15px;
+      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #2d6a4f;
+      color: white;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: #40916c;
+    }
+
+    h2 {
+      margin-top: 40px;
+      text-align: center;
+      color: #333;
+    }
+
+    #cards-container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      margin-top: 20px;
+      animation: fadeIn 0.8s ease-in;
+    }
+
+    .card {
+      background: #ffffff;
+      border-left: 6px solid #2d6a4f;
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.05);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1);
+    }
+
+    .card h3 {
+      margin-top: 0;
+      color: #2d6a4f;
+      font-size: 18px;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 15px;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .loading {
+      text-align: center;
+      color: #777;
+      font-style: italic;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 600px) {
+      body {
+        padding: 20px 10px;
+      }
+
+      form, .card {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>🌾 Crop Doctor AI</h1>
+
+    <form id="imageForm">
+      <input type="file" name="image" accept="image/*" required>
+      <input type="text" name="prompt" placeholder="Optional prompt (ignored)">
+      <button type="submit">🧠 Analyze Image</button>
+    </form>
+
+    <h2>📝 Diagnosis Result</h2>
+    <div class="loading" id="loadingMsg" style="display:none;">🧪 Analyzing image, please wait...</div>
+    <div id="cards-container"></div>
+  </div>
+
+  <script>
+    document.getElementById("imageForm").addEventListener("submit", async function(event) {
+      event.preventDefault();
+
+      const formData = new FormData(this);
+      const loading = document.getElementById("loadingMsg");
+      const container = document.getElementById("cards-container");
+      container.innerHTML = "";
+      loading.style.display = "block";
+
+      try {
+        const res = await fetch("/analyze", {
+          method: "POST",
+          body: formData
+        });
+
+        const data = await res.json();
+        const responseText = data.response || "Error: " + data.error;
+        loading.style.display = "none";
+
+        const sections = {
+          "🌿 Disease Name": "",
+          "🩺 Symptoms": "",
+          "💊 Remedies": "",
+          "🛡️ Prevention": "",
+          "✅ Health Status": ""
+        };
+
+        for (const key of Object.keys(sections)) {
+          const start = responseText.indexOf(key);
+          if (start !== -1) {
+            const nextKeys = Object.keys(sections).filter(k => k !== key);
+            const nextStarts = nextKeys.map(k => responseText.indexOf(k, start + 1)).filter(i => i !== -1);
+            const end = nextStarts.length > 0 ? Math.min(...nextStarts) : responseText.length;
+            sections[key] = responseText.slice(start + key.length + 1, end).trim();
+          }
+        }
+
+        for (const [title, content] of Object.entries(sections)) {
+          if (content) {
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `<h3>${title}</h3><p>${content}</p>`;
+            container.appendChild(card);
+          }
+        }
+
+      } catch (error) {
+        loading.style.display = "none";
+        container.innerHTML = `<div class="card"><p>❌ Error analyzing image. Please try again.</p></div>`;
+      }
+    });
+  </script>
+</body>
+</html>
