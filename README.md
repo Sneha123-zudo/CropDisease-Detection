@@ -26,5 +26,4 @@ This tool helps farmers and agriculture enthusiasts **quickly diagnose crop heal
 
 - **Frontend:** HTML, CSS, JavaScript
 - **Backend:** Python (Flask / FastAPI)
-- **Machine Learning:** TensorFlow / PyTorch (for image classification model)
-- **Utilities:** OpenCV, Pillow for image processing
+
